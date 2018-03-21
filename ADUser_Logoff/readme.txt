@@ -5,4 +5,4 @@
 # Written by Jtekt 20 March 2018 
 # Version 1.1
 # Sample usage: 
-# lr_logoff.ps1 -computer COMPUTERNAME -username USERNAME (-force TRUE/FALSE)
+# user_logoff.ps1 -computer COMPUTERNAME -username USERNAME (-force TRUE/FALSE)
