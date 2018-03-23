@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<remv1:Remediation-Plugin xmlns:remv1="RemediationVersion1.xsd" Name="Capture Network Traffic">
+  <remv1:Action Name="Capture Network Traffic" Command="C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe">
+    <remv1:ConstantParameter Name="Script" Switch="-file PacketCapture.ps1" Order="1" />
+    <remv1:StringParameter Name="Target System" Switch="" Order="2" />
+	<remv1:StringParameter Name="Duration In Seconds" Switch="" Order="3" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="60" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+	<remv1:StringParameter Name="Destination Path" Switch="" Order="4" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="C:/temp/" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+  </remv1:Action>
+</remv1:Remediation-Plugin>
