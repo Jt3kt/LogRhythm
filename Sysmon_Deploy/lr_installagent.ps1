@@ -14,9 +14,11 @@
 # Second check is to validate install file was successfully transferred to target host.
 #
 # Written by Jtekt 09 April 2018 
-# Version 1.1
+# https://github.com/Jtekt/LogRhythm
+# Version 1.2
 # Sample usage: 
 # lr_installagent.ps1 -computer COMPUTERNAME -installAddLocal System_Monitor|RT_FIM_DRIVER|ALL -serverHost IPADDR -serverPort PORT
+#
 param (
     [Parameter(Mandatory=$true,Position=1)][string]$computer,
     #InstallAddLocal options = ( System_Monitor | RT_FIM_DRIVER | ALL)
@@ -25,9 +27,11 @@ param (
     [Parameter(Mandatory=$true,Position=4)][string]$serverPort = "443",
     [Parameter(Mandatory=$false,Position=5)][string]$installStagePath = "C:\temp\sysmon\",
     [Parameter(Mandatory=$false,Position=6)][string]$clientPort = "3333",  
-    [Parameter(Mandatory=$false,Position=7)][string]$force = $false
+    #Currently not used.
+    [Parameter(Mandatory=$false,Position=7)][string]$force = $false,
+    [Parameter(Mandatory=$false,Position=8)][string]$debug = $false
  )
-#$fileSource = local installation file source folder
+#$fileSource = local installation file source folder.  Must be set to in order to operate.
 $Global:fileSource = "C:\temp\sysmon\"
 $Global:serviceName = "LogRhythm System Monitor Service"
 $Global:serviceStatus = $null
@@ -38,6 +42,15 @@ $Global:copyStatus = $null
 $Global:installArguments = ' /s /v" /qn ADDLOCAL=' + $installAddLocal + ' HOST='+ $serverHost + ' SERVERPORT=' + $serverPort + '"'
 $Global:serviceStatus = $false
 $Global:installStatus = $false
+$installStagePath = $installStagePath + "\"
+
+trap [Exception] {
+    write-error $("Exception: " + $_)
+    exit 1
+}
+
+
+if($debugMode -eq 1){$DebugPreference = "Continue"}else{$DebugPreference = "SilentlyContinue"}
 
 #Currently does not support 64Core.
 Function identifyInstallFIle {
@@ -46,7 +59,8 @@ Function identifyInstallFIle {
     }
     catch{
         Write-host "Unable to determine 32/64bit OS status on $computer.`n$($Error[0].Exception.Message)"
-        continue
+        exit 1
+        #continue
     }
     if ($OS_Arch -eq $true){
         #64 Bit
@@ -80,7 +94,8 @@ Function installStatus {
     }
     catch{
         Write-host "Unable to determine if SCSM service is installed on $computer.`n$($Error[0].Exception.Message)"
-        continue
+        exit 1
+        #continue
     }
     if ($app -eq $null){
         Write-Verbose $Global:serviceName" not found on "$computer
@@ -100,7 +115,8 @@ Function copyApp{
     }
     catch{
         Write-host "Unable to establish New-PSSession to $computer.`n$($Error[0].Exception.Message)"
-        continue
+        exit 1
+        #continue
     }
     #Begin existing file/folder structure check & file verification.
     #Verify target directory
@@ -109,16 +125,19 @@ Function copyApp{
     }
     catch{
         Write-host "Error while attempting to verify installation directory.`n$($Error[0].Exception.Message)"
-        continue
+        exit 1
+        #continue
     }
     if ($dirstatus -eq $false) {
         Write-Verbose "Creating target directory $installStagePath on $computer."
         try{ 
             Invoke-Command -ComputerName $computer -scriptBlock {New-Item -Path $args -type Directory -Force} -ArgumentList $installStagePath
+			Start-Sleep .5
         }
         catch{
             Write-host "Error while attempting to create directory $installStagePath.`n$($Error[0].Exception.Message)"
-            continue
+            exit 1
+            #continue
         }
     }
     else{
@@ -129,7 +148,8 @@ Function copyApp{
         }
         catch{
             Write-host "Error while checking for $fullPath.`n$($Error[0].Exception.Message)"
-            continue
+            exit 1
+            #continue
         }
         Write-Verbose "File status is $filestatus."    
     }
@@ -139,19 +159,21 @@ Function copyApp{
     else {
         try{ 
             Copy-Item -Path $Global:fileSource$installFileName -Destination $installStagePath$installFileName -ToSession $session
+			Start-Sleep 120
         }
         catch{
             Write-host "Error while attempting to copy $installFileName to $installStagePath.`n$($Error[0].Exception.Message)"
-            continue
+            exit 1
+            #continue
         }
         try{ 
             Copy-Item -Path $Global:fileSource$installFileHash -Destination $installStagePath$Global:installFileHash -ToSession $session
         }
         catch{
             Write-host "Error while attempting to copy $installFileHash to $installStagePath.`n$($Error[0].Exception.Message)"
-            continue
+            exit 1
+            #continue
         }
-        Start-Sleep 120
     }
     #Begin verifying remote hash
     [string]$sourceHash = Get-Content $Global:fileSource$Global:installFileHash -First 1
@@ -160,7 +182,8 @@ Function copyApp{
     }
     catch{
         Write-host "Error while attempting to retrieve sha256 hash for $fullPath.`n$($Error[0].Exception.Message)"
-        continue
+        exit 1
+        #continue
     }
     if ($sourceHash -eq $remoteFileHash.hash){
         Write-Host "Copied $installFileName hash verified.  Proceeding to install."
@@ -189,7 +212,8 @@ Function installApp {
             }
             catch{
                 Write-host "Error while attempting kick off installation process.`n$($Error[0].Exception.Message)"
-                continue
+                exit 1
+                #continue
             }
             if ($newproc.ReturnValue -eq 0 ) 
             { 
@@ -213,7 +237,8 @@ Function serviceStatus {
     }
     catch{
         Write-host "Error while attempting identify SCSM service status.`n$($Error[0].Exception.Message)"
-        continue
+        exit 1
+        #continue
     }
     Write-Verbose $servstat
     if ($servstat -like '*Running*'){
@@ -240,7 +265,8 @@ Function serviceStart {
         }
         catch{
             Write-host "Error while attempting to start scsm service.`n$($Error[0].Exception.Message)"
-            continue
+            exit 1
+            #continue
         }
         Start-Sleep -Seconds .5
         serviceStatus
@@ -250,7 +276,8 @@ Function serviceStart {
             }
             catch{
                 Write-host "Error while attempting to set automatic starting on scsm service.`n$($Error[0].Exception.Message)"
-                continue
+                exit 1
+                #continue
             }
             Write-Host $Global:serviceName" set to start automatically."
         }
@@ -268,7 +295,8 @@ Function cleanupFiles{
         }
         catch{
             Write-host "Error while attempting to verify installation directory.`n$($Error[0].Exception.Message)"
-            continue
+            exit 1
+            #continue
         }
         Write-Verbose $dirstatus
         if ($dirstatus -eq $false) {
@@ -284,7 +312,8 @@ Function cleanupFiles{
                 }
                 catch{
                     Write-host "Error while deleting $fullpath on $computer.  Cleanup manually.`n$($Error[0].Exception.Message)"
-                    continue
+                    exit 1
+                    #continue
                 }
                 Write-Verbose "$fullpath successfully deleted."
             }
@@ -293,7 +322,8 @@ Function cleanupFiles{
             }
             catch{
                 Write-host "Error while deleting $installStagePath on $computer.  Cleanup manually.`n$($Error[0].Exception.Message)"
-                continue
+                exit 1
+                #continue
             }
             Write-Host "Deleted temporary install files stored at: $installStagePath.`nCleanup complete."
         }
@@ -304,3 +334,4 @@ identifyInstallFIle
 installApp
 serviceStart
 cleanupFiles
+Exit 0
