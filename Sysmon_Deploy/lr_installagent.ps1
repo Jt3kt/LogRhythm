@@ -29,7 +29,7 @@ param (
     [Parameter(Mandatory=$false,Position=6)][string]$clientPort = "3333",  
     #Currently not used.
     [Parameter(Mandatory=$false,Position=7)][string]$force = $false,
-    [Parameter(Mandatory=$false,Position=8)][string]$debug = $false
+    [Parameter(Mandatory=$false,Position=8)][string]$debugMode = $false
  )
 #$fileSource = local installation file source folder.  Must be set to in order to operate.
 $Global:fileSource = "C:\temp\sysmon\"
