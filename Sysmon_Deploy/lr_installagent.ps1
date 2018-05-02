@@ -1,4 +1,4 @@
-#Requires -Version 5.0
+#Requires -Version 5.1
 #Requires -RunAsAdministrator
 #This script is designed to uninstall the LogRhythm System Monitor Agent silently from an endpoint domain joined Windows device.
 #
