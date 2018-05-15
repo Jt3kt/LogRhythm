@@ -8,7 +8,7 @@ Written by Jtekt 15 May 2018
 This script is designed to function as a LogRhythm SmartResponse to carry out an install of Microsoft Sysinternals Sysmon agent silently from an endpoint domain joined Windows device.
 The intended use for this script is to enable the collection of additional workstation data as a result of an AIE rule that warrants further investigation.
 
-This has been used as a troubleshooting aid to track down and isolate anomolies that occur on workstations by enabling advance logging capabilities based on observed events ont he endpoint.
+This has been used as a troubleshooting aid to track down and isolate anomolies that occur on workstations by enabling advance logging capabilities based on observed events on the endpoint.
 
 ##### :rotating_light: This script and SmartResponse is not officially supported by LogRhythm - use at your own risk! :rotating_light:
 
