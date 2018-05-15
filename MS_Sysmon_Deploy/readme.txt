@@ -28,3 +28,4 @@ Plugin developed and tested with Powershell 5.1 and LogRhythm 7.2.6.
 Any material that is referenced from another developer; I appreciate the dedication those in the community have and openness to share. Thank you!
 
 - SwiftOnSecurity - Sysmon configuration policy
+- Mark Russinovich and Thomas Garnier - Publication and development of Sysmon
