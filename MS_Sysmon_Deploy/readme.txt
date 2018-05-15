@@ -22,6 +22,25 @@ This has been used as a troubleshooting aid to track down and isolate anomolies 
 
 Plugin developed and tested with Powershell 5.1 and LogRhythm 7.2.6.
 
+## [Instructions]
+
+The following paramters are passed via LogRhythm:
+    $computer - Target computer
+    $srcConfig - File name for source sysmon configuration
+    $installStagePath - Full path to folder target on target computer.  Omit the tailing \
+    $installSys64 - It should not be required to run sysmon64 on a 64bit endpoint, however, if you want to the option is there.
+    $force - Forces file copies and subsiquent process/configuration updates.
+
+The following paramters must be set within the ms_sysmon_installagent.ps1 script:
+    $Global:fileSource - Provide the full path to the directory where MS Sysinternal and configuration files are available. 
+                         Default is C:\temp\ms_sysmon\
+
+## [Examples]
+Install and apply client configuration
+ ms_sysmon_installagent.ps1 -computer COMPUTERNAME -srcConfig CONFIGNAME -installStagePath C:\temp\ms_sysmon 
+Update client configuration
+ ms_sysmon_installagent.ps1 -computer COMPUTERNAME -srcConfig CONFIGNAME -installStagePath C:\temp\ms_sysmon -force true
+
 
 ## [Thanks]
 
