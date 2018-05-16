@@ -1,7 +1,7 @@
 # LogRhythm
 SmartResponse plugin development.
 
-##### :rotating_light: These scripts and SmartResponse is not officially supported by LogRhythm - use at your own risk! :rotating_light:
+##### :rotating_light: These scripts and SmartResponse files are not officially supported by LogRhythm - use at your own risk! :rotating_light:
 
 ## [About]
 
@@ -15,4 +15,4 @@ Tested against:
 Windows 7
 Windows 10
 
-##### :rotating_light: These scripts and SmartResponse is not officially supported by LogRhythm - use at your own risk! :rotating_light:
+##### :rotating_light: These scripts and SmartResponse files are not officially supported by LogRhythm - use at your own risk! :rotating_light:
