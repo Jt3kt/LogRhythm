@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<remv1:Remediation-Plugin xmlns:remv1="RemediationVersion1.xsd" Name="LR Windows Sysmon Deploy" Guid="00000000-0000-0000-0000-100000000011" Version="1" IsLogRhythmPlugin="false">
+  <remv1:Action Name="LR Windows Sysmon Deploy" Command="C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe">
+    <remv1:ConstantParameter Name="Script" Switch="-file lr_installagent.ps1 " Order="1" />
+    <remv1:StringParameter Name="Target System" Switch="-computer " Order="2" />
+	<remv1:StringParameter Name="Agent Mode" Switch="-installAddLocal " Order="3" >
+    	<remv1:DefaultInput>
+			<remv1:StaticInput Value="ALL" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>	
+	<remv1:StringParameter Name="Server Host IP" Switch="-serverHost " Order="4" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="10.0.0.1" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+    <remv1:StringParameter Name="Server Host Port" Switch="-serverPort " Order="5" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="443" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+   	<remv1:StringParameter Name="Installation Stage Path" Switch="-installStagePath " Order="6" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="C:\temp\sysmon" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+  </remv1:Action>
+</remv1:Remediation-Plugin>
