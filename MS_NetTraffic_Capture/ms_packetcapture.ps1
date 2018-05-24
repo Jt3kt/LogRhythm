@@ -8,9 +8,9 @@
 #
 # Written by Jtekt 18 May 2018 
 # https://github.com/Jtekt/LogRhythm
-# Version 0.3
+# Version 0.5
 # Sample usage: 
-#  .\PAcketCapture.ps1 hostname.example.com 60 2000 c:\temp\ncap\
+#  .\PacketCapture.ps1 -computer hostname.example.com -duration 60 -maxFileSize 2000 -destPath c:\temp\ncap\
 #
 # PacketTrace function written by Adam Bertram
 # https://gallery.technet.microsoft.com/scriptcenter/Start-and-Stop-a-Packet-cce358e8
@@ -23,8 +23,10 @@ param (
     [Parameter(Mandatory=$false,Position=5)][string]$force = $false
  )
 $Global:dateStamp = get-date -uformat "%Y%m%d-%H%M"
-$destPath += $Global:dateStamp+'\'
-$Global:fileName = "LR_Ncap_" + $dateStamp + ".etl"
+$destPath += $computer+$Global:dateStamp+'\'
+$Global:fileRepository = "C:\temp\packetcapture\"
+$Global:fileName = "ncap_"+$computer+"_"+$dateStamp+".etl"
+$Global:copyStatus = $null
 
 
 Function Stage-Path{
@@ -68,6 +70,110 @@ Function Stage-Path{
     Write-Verbose "Directory $destPath created on $target."
 }
 
+Function Copy-Dir{
+    Param(
+        [Parameter(Mandatory=$true, position=1)][string]
+        $target,
+        [Parameter(Mandatory=$true, position=2)][string]
+        $srcPath,
+        [Parameter(Mandatory=$true, position=3)][string]
+        $destPath,
+        [Parameter(Mandatory=$false, position=4)]
+        $fileVerify
+    )
+    #Establish connection to target.
+    try{ 
+        $Session = New-PSSession -ComputerName $target -ErrorAction Stop
+    }
+    catch{
+        Write-host "Unable to establish New-PSSession to $target.`n$($Error[0].Exception.Message)"
+        exit 1
+    }
+    #Begin existing file/folder structure check & file verification.
+    #Verify target directory
+    try{ 
+        $dirstatus = Invoke-Command -ComputerName $target -scriptBlock {Test-Path $args -PathType Container} -ArgumentList $destPath -ErrorAction Stop
+    }
+    catch{
+        Write-host "Error while attempting to verify installation directory.`n$($Error[0].Exception.Message)"
+        exit 1
+    }
+    if ($dirstatus -eq $false) {
+        Write-Verbose "Creating target directory $destPath on $target."
+        try{ 
+            Invoke-Command -ComputerName $target -scriptBlock {New-Item -Path $args -type Directory -Force} -ArgumentList $destPath -ErrorAction Stop
+			Start-Sleep .5
+        }
+        catch{
+            Write-host "Error while attempting to create directory $destPath.`n$($Error[0].Exception.Message)"
+            exit 1
+        }
+    }
+    try{
+        $destPath = $destPath.TrimEnd('\')
+        $srcPath = $srcPath.TrimEnd('\')
+        Copy-Item -Path $srcPath -Destination $destPath -FromSession $session -Recurse -ErrorAction Stop
+        Start-Sleep 8
+    }
+    catch{
+        Write-host "Error while attempting to copy $filename to $destPath.`n$($Error[0].Exception.Message)"
+        exit 1
+    }
+}
+
+function Validate-Hash {
+    Param(
+        [Parameter(Mandatory=$true, position=1)][string]
+        $target,
+        [Parameter(Mandatory=$true, position=2)][string]
+        $srcPath,
+        [Parameter(Mandatory=$true, position=3)][string]
+        $destPath,
+        [Parameter(Mandatory=$false, position=4)]
+        $fileName
+    )
+    $remotePath = $destPath+$fileName
+    $localPath = $srcPath+$fileName
+    $remoteFileHash = Invoke-Command -ComputerName $target -scriptBlock {Get-FileHash $args -Algorithm SHA256} -ArgumentList $remotePath -ErrorAction Stop
+    $localFileHash = Get-FileHash $localPath -Algorithm SHA256
+    if ($remoteFileHash.hash -eq $localFileHash.hash){
+        Write-Verbose "Copied $fileName hash verified."
+        $Global:copyStatus = $true
+    }
+    else{
+        Write-Verbose "Copied $fileName hash mismatch."
+        Write-Verbose "$remoteFileHash.hash `n$localFileHash.hash"
+        $Global:copyStatus = $false
+    }
+}
+
+Function Cleanup-Files{
+    if ($Global:copyStatus -eq $true){
+        Write-Host "Begin cleanup of $destPath"
+        $fileList = Invoke-Command -ComputerName $computer -scriptBlock {Get-ChildItem -Path $args } -ArgumentList $destPath
+        foreach ($file in $fileList){
+            $fullpath = $destPath+$file
+            try{
+                Invoke-Command -ComputerName $computer -scriptBlock {Remove-Item -Path $args } -ArgumentList $fullpath
+            }
+            catch{
+                Write-host "Error while deleting $fullpath on $computer.  Cleanup manually.`n$($Error[0].Exception.Message)"
+                exit 1
+                #continue
+            }
+            Write-Verbose "$fullpath successfully deleted."
+        }
+        try{
+            Invoke-Command -ComputerName $computer -scriptBlock {Remove-Item -Path $args } -ArgumentList $destPath
+        }
+        catch{
+            Write-host "Error while deleting $destPath on $computer.  Cleanup manually.`n$($Error[0].Exception.Message)"
+            exit 1
+            #continue
+        }
+        Write-Host "Deleted temporary install files stored at: $destPath.`nCleanup complete."
+    }
+}
 
 function Start-PacketTrace { 
 <#     
@@ -183,8 +289,23 @@ function Stop-PacketTrace {
 
 
 
+
+
 Write-Host $destPath$fileName
 Stage-Path $computer $destPath
 Invoke-Command -ComputerName $computer -ScriptBlock ${function:Start-PacketTrace} -ArgumentList $destPath$fileName,$maxFileSize
 Start-Sleep -s $duration
 Invoke-Command -ComputerName $computer -ScriptBlock ${function:Stop-PacketTrace}
+Copy-Dir $computer $destPath $Global:fileRepository
+$Global:fileRepository += $Global:dateStamp+'\'
+Validate-Hash $computer $Global:fileRepository $destPath $fileName
+if($copyStatus -eq $true){
+    Write-Host "$fileName copied successfully from $compter to $env:computername:$fileRepository."
+}
+$fileName = $fileName -replace ".etl", ".cab"
+Validate-Hash $computer $Global:fileRepository $destPath $fileName
+if($copyStatus -eq $true){
+    Write-Host "$fileName copied successfully from $compter to $env:computername:$fileRepository."
+    Cleanup-Files
+}
+exit 0
