@@ -8,7 +8,7 @@
 #
 # Written by Jtekt 18 May 2018 
 # https://github.com/Jtekt/LogRhythm
-# Version 0.5
+# Version 0.6
 # Sample usage: 
 #  .\PacketCapture.ps1 -computer hostname.example.com -duration 60 -maxFileSize 2000 -destPath c:\temp\ncap\
 #
@@ -23,11 +23,17 @@ param (
     [Parameter(Mandatory=$false,Position=5)][string]$force = $false
  )
 $Global:dateStamp = get-date -uformat "%Y%m%d-%H%M"
-$destPath += $computer+$Global:dateStamp+'\'
 $Global:fileRepository = "C:\temp\packetcapture\"
-$Global:fileName = "ncap_"+$computer+"_"+$dateStamp+".etl"
+$Global:fileName = "ncap-"+$dateStamp+".etl"
 $Global:copyStatus = $null
-
+try{ 
+    $Global:hostName = Invoke-Command -ComputerName $computer -scriptBlock {Get-WMIObject Win32_ComputerSystem | Select-Object -ExpandProperty name} -ErrorAction Stop
+}
+catch{
+    Write-host "Unable to pull destination HostName.`n$($Error[0].Exception.Message)"
+    exit 1
+}
+$destPath += $Global:hostName+'-'+$Global:dateStamp+'\'
 
 Function Stage-Path{
     Param(
@@ -290,22 +296,34 @@ function Stop-PacketTrace {
 
 
 
-
+Write-Verbose "a"
 Write-Host $destPath$fileName
+Write-Verbose "b"
 Stage-Path $computer $destPath
+Write-Verbose "c"
 Invoke-Command -ComputerName $computer -ScriptBlock ${function:Start-PacketTrace} -ArgumentList $destPath$fileName,$maxFileSize
+Write-Verbose "d"
 Start-Sleep -s $duration
+Write-Verbose "e"
 Invoke-Command -ComputerName $computer -ScriptBlock ${function:Stop-PacketTrace}
+Write-Verbose "f"
 Copy-Dir $computer $destPath $Global:fileRepository
-$Global:fileRepository += $Global:dateStamp+'\'
+Write-Verbose "g"
+$Global:fileRepository +=  $Global:hostName+'-'+$Global:dateStamp+'\'
+Write-Verbose "h"
 Validate-Hash $computer $Global:fileRepository $destPath $fileName
+Write-Verbose "i"
 if($copyStatus -eq $true){
     Write-Host "$fileName copied successfully from $compter to $env:computername:$fileRepository."
 }
+Write-Verbose "j"
 $fileName = $fileName -replace ".etl", ".cab"
+Write-Verbose "k"
 Validate-Hash $computer $Global:fileRepository $destPath $fileName
+Write-Verbose "l"
 if($copyStatus -eq $true){
     Write-Host "$fileName copied successfully from $compter to $env:computername:$fileRepository."
     Cleanup-Files
 }
+Write-Verbose "m"
 exit 0
