@@ -9,7 +9,7 @@ This repository is a collection of Powershell and Actions.xml files designed and
 
 Unless otherwise stated all scripts are developed on:
 Powershell 5.1
-LogRhythm 7.2.6
+LogRhythm 7.3.4
 
 Tested against:
 Windows 7
