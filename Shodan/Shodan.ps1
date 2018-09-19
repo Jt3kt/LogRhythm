@@ -1,48 +1,15 @@
 #====================================#
 #      Shodan SmartResponse          #
-#         Version 0.7                #
+#         Version 1.0                #
 #        Author: Jtekt               #
 #====================================#
 #
 # Licensed under the MIT License. See LICENSE file in the project root for full license information.
 #
 #   
-# Case update borrowed from Greg Foss / PIE Project 
+# Case update function borrowed from LogRhythm PIE Project 
 #     https://github.com/LogRhythm-Labs/PIE
 #
-
-<#
-    .SYNOPSIS
-        Submits IP address to Shodan and returns Shodan scan results.
-
-    .DESCRIPTION
-
-
-    .INPUTS
-        1) Shodan API key
-        
-        2) Host FQDN or IP address. 
-
-        Optional - Update LogRhythm Case
-        a) LogRhythm Case API key
-        
-        b) LogRhythm Web Console URL
-
-        c) Case # for result submission
-
-    .OUTPUTS
-        Host information as provided by Shodan.
-
-    .EXAMPLE
-
-
-    .LINK
-        https://developer.shodan.io/api
-
-    .NOTES
-
-
-    #>
 
 [CmdLetBinding()]
 param( 
@@ -63,12 +30,44 @@ $IPregex='(?<Address>((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4
 $FQDNregex='(?<fqdn>(https?:\/\/([\w_-]+((\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])?))'
 $MD5regex='(?<Hash>([a-f0-9]{32}))'
 $SHA256regex='(?<Hash>([A-Fa-f0-9]{64}))'
-$shodanHostDetails = $true
-$shodanSSLDetails = $true
-
 # ================================================================================
 # Retrieve Host information from Shodan
 # ================================================================================
+<#
+    .SYNOPSIS
+        Submits IP address to Shodan and returns Shodan scan results.
+
+    .INPUTS
+        1) Shodan API key
+        
+        2) Host FQDN or IP address. 
+
+        Optional - Update LogRhythm Case
+        a) LogRhythm Case API key
+        
+        b) LogRhythm Web Console URL
+
+        c) Case # for result submission
+
+    .OUTPUTS
+        Host information as provided by Shodan.
+
+    .EXAMPLE
+        Writes results to current session.
+        .\Shodan.ps1 -key "SHODAN-API-KEY" -targetHost "http://example.com" -command "info"
+
+        Writes results to current session and sends to LogRhythm Case API, appending information as note into existing case.
+        .\Shodan.ps1 -key "SHODAN-API-KEY" -targetHost "http://example.com" -command "info" -caseNumber "322" -LogRhythmHost "logrhythm.yourdomain.com:8501" -caseAPIToken "LOGRHYTHM-CASE-API-KEY"
+
+    .LINK
+        https://developer.shodan.io/api
+
+    .NOTES
+        Optional flags: 
+          shodanHostDetails - Responsible for providing summary information.  Geographic location, ISP, Organization
+          shodanSSLDetails - SSL certificate information for each detected service running SSL.  SSL based alerts will still be displayed if set to false.
+          shodanMinecraftDetails - Provides server version, description, and player counts.
+#>
 function Host-Info{
 [CmdLetBinding()]
 param(
@@ -76,124 +75,153 @@ param(
     [Parameter(Mandatory=$true)][string]$target
 )
 
+$shodanHostDetails = $true
+$shodanSSLDetails = $true
+$shodanMinecraftDetails = $true
 
 # Check if $host is IP or FQDN
-    if ( $target ) {
-        $hostIP = $targetHost -match $IPregex
-        $hostFQDN = $targetHost -match $FQDNregex
-        Write-Verbose $hostIP
-        if ( $hostIP -eq $true ) { 
-            Write-Verbose "Host in IP address format"
-            $shodanIP = $targetHost
-        } elseif ( $hostFQDN -eq $true ) { 
-            # Query DNS and obtain domain IP address
-            $splitLink = ([System.Uri]"$targetHost").Host
-            try {
-                $shodanIPQuery = Invoke-RestMethod "https://api.shodan.io/dns/resolve?hostnames=$splitLink&key=$key"
-            } catch {
-                $error =  $_ | Select-String "error"
-                Write-Host $error
-                Write-Host "Status Code: $($_.Exception.Response.StatusCode.value__)"
-                Write-Host "Status Description: $($_.Exception.Response.StatusDescription)"
-                $status = "== Shodan Scan Info ==\r\nError on API call\r\nStatus Code: $($_.Exception.Response.StatusCode.value__)\r\nStatus Description: $($_.Exception.Response.StatusDescription)"
-                return "$status"
-            }
-            $shodanIPQuery | Where-Object -Property $splitLink -Match $IPregex
-            $shodanIP = $Matches.Address
-            $shodanLink = "https://www.shodan.io/host/$shodanIP"
-            Write-Verbose $shodanLink
-        } else {
-            echo "Error: Invalid URL or IP address format."
-            Exit 1
-        }
+$hostIP = $targetHost -match $IPregex
+$hostFQDN = $targetHost -match $FQDNregex
+if ( $hostIP -eq $true ) { 
+    Write-Verbose "Host in IP address format"
+    $shodanIP = $targetHost
+} elseif ( $hostFQDN -eq $true ) { 
+    # Query DNS and obtain domain IP address
+    $splitLink = ([System.Uri]"$targetHost").Host
+    try {
+        $shodanIPQuery = Invoke-RestMethod "https://api.shodan.io/dns/resolve?hostnames=$splitLink&key=$key"
+    } catch {
+        $error =  $_ | Select-String "error"
+        Write-Host $error
+        Write-Host "Status Code: $($_.Exception.Response.StatusCode.value__)"
+        Write-Host "Status Description: $($_.Exception.Response.StatusDescription)"
+        $status = "== Shodan Scan Info ==\r\nError on API call\r\nStatus Code: $($_.Exception.Response.StatusCode.value__)\r\nStatus Description: $($_.Exception.Response.StatusDescription)"
+        return "$status"
+    }
+    $shodanIPQuery | Where-Object -Property $splitLink -Match $IPregex
+    $shodanIP = $Matches.Address
+} else {
+    echo "Error: Invalid URL or IP address format."
+    Exit 1
+}
+$shodanLink = "https://www.shodan.io/host/$shodanIP"
 
-        # Query Shodan Host scan
-        try {
-            $shodanHostInfo = Invoke-RestMethod "https://api.shodan.io/shodan/host/$shodanIP`?key=$key"
-        } catch {
-            $error =  $_ | Select-String "error"
-            Write-Host "== Shodan Scan Info =="
-            Write-Host $error
-            Write-Host "Status Code: $($_.Exception.Response.StatusCode.value__)"
-            Write-Host "Status Description: $($_.Exception.Response.StatusDescription)"
-            $status = "== Shodan Scan Info ==\r\nError on API call\r\nStatus Code: $($_.Exception.Response.StatusCode.value__)\r\nStatus Description: $($_.Exception.Response.StatusDescription)"
-            return "$status"
-        }
-        $shodanScanDate = $shodanHostInfo.last_update
-        $shodanCountry = $shodanHostInfo.country_name
-        $shodanRegion = $shodanHostInfo.region_code
-        $shodanCity = $shodanHostInfo.city
-        $shodanPostal = $shodanHostInfo.postal_code
-        $shodanPorts = $shodanHostInfo.ports
-        $shodanTags = $shodanHostInfo.tags
+# Query Shodan Host scan
+try {
+    $shodanHostInfo = Invoke-RestMethod "https://api.shodan.io/shodan/host/$shodanIP`?key=$key"
+} catch {
+    $error =  $_ | Select-String "error"
+    Write-Host "== Shodan Scan Info =="
+    Write-Host $error
+    Write-Host "Status Code: $($_.Exception.Response.StatusCode.value__)"
+    Write-Host "Status Description: $($_.Exception.Response.StatusDescription)"
+    $status = "== Shodan Scan Info ==\r\nError on API call\r\nStatus Code: $($_.Exception.Response.StatusCode.value__)\r\nStatus Description: $($_.Exception.Response.StatusDescription)"
+    return "$status"
+}
 
-        #Determine Shodan services identified.
-        $shodanModules = $shodanHostInfo.data | Select-Object -ExpandProperty _shodan | Select-Object -ExpandProperty module
-        if ( $shodanHostDetails -eq $true ) {
-            $shodanStatus = "====INFO - SHODAN====\r\nInformation on $link`:$shodanIP.\r\nReported location:\r\n Country: $shodanCountry"
-            if ( $shodanCity ) { $shodanStatus += "\r\n City: $shodanCity" } 
-            if ( $shodanRegion ) { $shodanStatus += "\r\n Region: $shodanRegion" }
-            if ( $shodanPostal ) { $shodanStatus += "\r\n Postal: $shodanPostal" }
-            if ( $shodanTags ) { $shodanStatus += "\r\nDetected tags: $shodanTags" }
-            $shodanStatus += "\r\nLast scanned on $shodanScanDate."
-            Write-Host "====INFO - SHODAN====`r`nInformation on $targetHost`: $shodanIP`r`nReported location:`r`n Country: $shodanCountry"
-            if ( $shodanCity ) { Write-Host " City: $shodanCity" } 
-            if ( $shodanRegion ) { Write-Host " Region: $shodanRegion" }
-            if ( $shodanPostal ) { Write-Host " Postal: $shodanPostal" }
-            if ( $shodanTags ) { Write-Host "`r`nDetected tags: $shodanTags" }
-        }
-
-        #Break out and report on Shodan data
-        for($i=0; $i -le ($shodanHostInfo.data.Length-1); $i++){
-            Write-Host "`r`n*** Service $($shodanHostInfo.data[$i]._shodan.module) ***"
-            Write-Host "Service Summary: $shodanIP`:$($shodanHostInfo.data[$i].port) $($shodanHostInfo.data[$i].transport.ToUpper())"
-            if ( $($shodanHostInfo.data[$i].tags) ) { Write-Host "Reported Tags: $($shodanHostInfo.data[$i].tags)" }
-            if ( $($shodanHostInfo.data[$i].product) ) { Write-Host "Detected Product: $($shodanHostInfo.data[$i].product)" }
-            if ( $($shodanHostInfo.data[$i].http.server) ) { Write-Host "HTTP Server: $($shodanHostInfo.data[$i].http.server)" }
-            $error = $shodanHostInfo.data[$i] | Select-String "error"
-            if ( $error ){
-                Write-Host $shodanHostInfo.data[$i].Data
-            }
-            if ( $shodanHostInfo.data[$i].ssl ){
-                $shodanCert1 = $shodanHostInfo.data[$i] | Select-Object -ExpandProperty ssl
-                $shodanCertSubject = $shodanCert1.cert.subject
-                $shodanCertSHA256 = $shodanCert1.cert.fingerprint.sha256
-                $shodanCertIssuer = $shodanCert1.cert.issuer
-                $shodanCertIssued = $shodanCert1.cert.issued
-                $shodanCertExpiration = $shodanCert1.cert.expires
-                $shodanCertCiphers = $shodanCert1.cipher
-                Write-Host "`r`n-- SSL Certificate Observed --"
-                Write-Host "Certificate Subject: $shodanCertSubject"
-                Write-Host "Certificate SHA256: $shodanCertSHA256"
-                Write-Host "Certificate Issuer: $shodanCertIssuer"
-                Write-Host "Certificate Issue date: $shodanCertIssued"
-                Write-Host "Certificate Expiration: $shodanCertExpiration"
-                Write-Host "Supported Ciphers: $shodanCertCiphers`r`n"
-                if ( $shodanCert1.cert.expired -eq $true ) {
-                    $shodanStatus = "ALERT: Expired Certificate Detected!"
-                    Write-Host "ALERT: Expired Certificate Detected!"
-                }
-                if ( $shodanCertIssuer -imatch "Let's Encrypt" ) {
-                    $shodanStatus = "ALERT: Let's Encrypt Certificate Authority Detected!"
-                    Write-Host "ALERT: Let's Encrypt Certificate Authority Detected!"                   
-                } elseif ( $shodanTags -imatch "self-signed" ) {
-                    $shodanStatus = "ALERT: Self Signed Certificate Detected!"
-                    Write-Host "ALERT: Self Signed Certificate Detected!"
-                }
-                Write-Host "-- End SSL Observation --"
-            }
-            if ( $i -eq ($shodanHostInfo.data.Length-1) ) {
-                Write-Host "`r`n*** End Service Summary ***"
-            }
-        }
-        Write-Host "`r`nLast scanned on $shodanScanDate.  Full details available here: $shodanLink."
+#Determine Shodan services identified.
+$shodanModules = $shodanHostInfo.data | Select-Object -ExpandProperty _shodan | Select-Object -ExpandProperty module
+if ( $shodanHostDetails -eq $true ) {
+    $status = "====INFO - SHODAN====\r\nInformation on $target`:$shodanIP\r\nReported location:\r\n Country: $($shodanHostInfo.country_name)"
+    if ( $($shodanHostInfo.city) ) { $status += "\r\n City: $($shodanHostInfo.city)" } 
+    if ( $($shodanHostInfo.region_code) ) { $status += "\r\n Region: $($shodanHostInfo.region_code)" }
+    if ( $($shodanHostInfo.postal_code) ) { $status += "\r\n Postal: $($shodanHostInfo.postal_code)" }
+    if ( $($shodanHostInfo.tags) ) { $status += "\r\n Detected tags: $($shodanHostInfo.tags)" }
+    if ( $($shodanHostInfo.org) ) { $status += "\r\n Organization: $($shodanHostInfo.org)" }
+    if ( $($shodanHostInfo.org) -ne $($shodanHostInfo.isp) ) {
+        if ( $($shodanHostInfo.isp) ) { $status += "\r\n Internet Service Provider: $($shodanHostInfo.isp)" }
     }
 }
+
+#Break out and report on Shodan data
+for($i=0; $i -le ($shodanHostInfo.data.Length-1); $i++){
+    $status += "\r\n\r\n*** Service $($shodanHostInfo.data[$i]._shodan.module) ***"
+    $status += "\r\nService Summary: $shodanIP`:$($shodanHostInfo.data[$i].port) $($shodanHostInfo.data[$i].transport.ToUpper())"
+    if ( $($shodanHostInfo.data[$i].tags) ) { $status += "\r\nReported Tags: $($shodanHostInfo.data[$i].tags)" }
+    if ( $($shodanHostInfo.data[$i].product) ) { $status += "\r\nDetected Product: $($shodanHostInfo.data[$i].product)" }
+    if ( $($shodanHostInfo.data[$i].http.server) ) { $status += "\r\nHTTP Server: $($shodanHostInfo.data[$i].http.server)" }
+    $error = $($shodanHostInfo.data[$i].data) | Select-String -Pattern "ssl error"
+    if ( $error ){
+        $status += "\r\n$($shodanHostInfo.data[$i].data)"
+    }
+    #Minecraft
+    if ( $shodanMinecraftDetails -eq $true) {
+        if ( $shodanHostInfo.data[$i].product -eq "Minecraft" ) {
+            $status += "\r\nServer Version: $($shodanHostInfo.data[$i].minecraft.version.name)"
+            $status += "\r\nServer Description: $($shodanHostInfo.data[$i].minecraft.description)"
+            $status += "\r\nMax Players: $($shodanHostInfo.data[$i].minecraft.players.max)"
+            $status += "\r\nCurrent Players: $($shodanHostInfo.data[$i].minecraft.players.online)"
+        }
+    }
+    #SSL
+    if ( $shodanHostInfo.data[$i].ssl ){
+        $shodanCert1 = $shodanHostInfo.data[$i] | Select-Object -ExpandProperty ssl
+        if ( $shodanSSLDetails -eq $true) {
+            $status += "\r\n\r\n-- SSL Certificate Observed --"
+            $status += "\r\nCertificate Subject: $($shodanCert1.cert.subject)"
+            $status += "\r\nCertificate SHA256: $($shodanCert1.cert.fingerprint.sha256)"
+            $status += "\r\nCertificate Issuer: $($shodanCert1.cert.issuer)"
+            $status += "\r\nCertificate Issue date: $($shodanCert1.cert.issued)"
+            $status += "\r\nCertificate Expiration date: $($shodanCert1.cert.expires)"
+            $status += "\r\nSupported Ciphers: $($shodanCert1.cipher)\r\n"
+        }
+        if ( $($shodanCert1.cert.expired) -eq $true ) {
+            $status += "\r\nALERT: Expired Certificate Detected!"
+        }
+        if ( $($shodanCert1.cert.issuer) -imatch "Let's Encrypt" ) {
+            $status += "\r\nALERT: Let's Encrypt Certificate Authority Detected!"             
+        } elseif ( $($shodanHostInfo.data[$i].tags) -imatch "self-signed" ) {
+            $status += "\r\nALERT: Self Signed Certificate Detected!"
+        }
+    }
+    #FTP
+    if ( $shodanHostInfo.data[$i]._shodan.module -eq "ftp" ) {
+        $status += "\r\nAnonymous Login: $($shodanHostInfo.data[$i].ftp.anonymous)"
+    }   
+}
+$status += "\r\n\r\n**** End Service Summary ****"
+$status += "\r\n\r\nLast scanned on $($shodanHostInfo.last_update).  Full details available here: $shodanLink."
+Write-Host $status.Replace("\r\n","`r`n")
+Return "$status"
+}
+
 
 
 # ================================================================================
 # Shodan Scan Host
 # ================================================================================
+<#
+    .SYNOPSIS
+        Submits IP address to Shodan for Scheduling a Scan
+
+    .INPUTS
+        1) Shodan API key
+        
+        2) Host FQDN or IP address. 
+
+        Optional - Update LogRhythm Case
+        a) LogRhythm Case API key
+        
+        b) LogRhythm Web Console URL
+
+        c) Case # for result submission
+
+    .OUTPUTS
+        Confirmation ID
+
+    .EXAMPLE
+        Writes results to current session.
+        .\Shodan.ps1 -key "SHODAN-API-KEY" -targetHost "http://example.com" -command "scan"
+
+        Writes results to current session and sends to LogRhythm Case API, appending information as note into existing case.
+        .\Shodan.ps1 -key "SHODAN-API-KEY" -targetHost "http://example.com" -command "scan" -caseNumber "322" -LogRhythmHost "logrhythm.yourdomain.com:8501" -caseAPIToken "LOGRHYTHM-CASE-API-KEY"
+
+    .LINK
+        https://developer.shodan.io/api
+
+    .NOTES
+        The confirmation ID is required for retrieving Scan Status
+#>
 function Host-Scan{
 [CmdLetBinding()]
 param(
@@ -225,6 +253,26 @@ param(
 # ================================================================================
 # Shodan API Info
 # ================================================================================
+<#
+    .SYNOPSIS
+        Queries Shodan for current API key usage
+
+    .INPUTS
+        1) Shodan API key
+        
+    .OUTPUTS
+        Current Shodan API usage
+
+    .EXAMPLE
+        Writes results to current session.
+        .\Shodan.ps1 -key "SHODAN-API-KEY" -command "api-info"
+
+    .LINK
+        https://developer.shodan.io/api
+
+    .NOTES
+        Cannot be sent to LogRhythm case.
+#>
 function Api-Info{
 [CmdLetBinding()]
 param(
@@ -245,6 +293,28 @@ param(
 # ================================================================================
 # Shodan Retrieve Scan Info
 # ================================================================================
+<#
+    .SYNOPSIS
+        Returns Shodan's Host scan status
+
+    .INPUTS
+        1) Shodan API key
+
+        2) Shodan Scan ID
+        
+    .OUTPUTS
+        Request scan status
+
+    .EXAMPLE
+        Writes results to current session.
+        .\Shodan.ps1 -key "SHODAN-API-KEY" -command "api-info"
+
+    .LINK
+        https://developer.shodan.io/api
+
+    .NOTES
+        Possible return values: Submitting, Queue, Processing, Done
+#>
 function Scan-Status{
 [CmdLetBinding()]
 param(
@@ -319,7 +389,7 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 }
 
 if ( $command -eq "info" ) {
-   Host-Info $key $targetHost 
+   $sdStatus = Host-Info $key $targetHost 
 }
 
 if ( $command -eq "scan" ) {

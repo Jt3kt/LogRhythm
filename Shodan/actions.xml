@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<remv1:Remediation-Plugin xmlns:remv1="RemediationVersion1.xsd" Name="Shodan" Guid="00000000-0000-0000-2000-100000000005" Version="1" IsLogRhythmPlugin="false">
+  <remv1:Action Name="Host Info" Command="C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe">
+    <remv1:ConstantParameter Name="Script" Switch="-file Shodan.ps1 " Order="1" />
+    <remv1:EncryptedParameter>
+        <remv1:StringParameter Name="Shodan API Key" Switch="-key " Order="2" >
+            <remv1:DefaultInput>
+			    <remv1:StaticInput Value="SHODAN API KEY" />
+		    </remv1:DefaultInput>
+	    </remv1:StringParameter>
+    </remv1:EncryptedParameter>
+	<remv1:StringParameter Name="Target" Switch="-targetHost " Order="3" >
+    	<remv1:DefaultInput>
+			<remv1:StaticInput Value="URL/IP Address" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>	
+ 	<remv1:ConstantParameter Name="Command" Switch="-command info" Order="4" />
+   	<remv1:StringParameter Name="Case #" Switch="-caseNumber " Order="5" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+	<remv1:StringParameter Name="LogRhythm Web Console" Switch="-LogRhythmHost " Order="6" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="LogRhythm Web Console URL/IP:8501" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+    <remv1:EncryptedParameter>
+		<remv1:StringParameter Name="Case API Token" Switch="-caseAPIToken " Order="7" >
+		    <remv1:DefaultInput>
+			    <remv1:StaticInput Value="LogRhythm Case API Key" />
+		    </remv1:DefaultInput>
+	    </remv1:StringParameter>
+    </remv1:EncryptedParameter>
+  </remv1:Action>
+  <remv1:Action Name="Request Scan" Command="C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe">
+    <remv1:ConstantParameter Name="Script" Switch="-file Shodan.ps1 " Order="1" />
+    <remv1:EncryptedParameter>
+        <remv1:StringParameter Name="Shodan API Key" Switch="-key " Order="2" >
+            <remv1:DefaultInput>
+			    <remv1:StaticInput Value="SHODAN API KEY" />
+		    </remv1:DefaultInput>
+	    </remv1:StringParameter>
+    </remv1:EncryptedParameter>
+	<remv1:StringParameter Name="Target" Switch="-targetHost " Order="3" >
+    	<remv1:DefaultInput>
+			<remv1:StaticInput Value="URL/IP Address" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>	
+ 	<remv1:ConstantParameter Name="Command" Switch="-command scan " Order="4" />
+    <remv1:StringParameter Name="Case #" Switch="-caseNumber " Order="5" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+	<remv1:StringParameter Name="LogRhythm Web Console" Switch="-LogRhythmHost " Order="6" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="LogRhythm Web Console URL/IP:8501" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+    <remv1:EncryptedParameter>
+		<remv1:StringParameter Name="Case API Token" Switch="-caseAPIToken " Order="7" >
+		    <remv1:DefaultInput>
+			    <remv1:StaticInput Value="LogRhythm Case API Key" />
+		    </remv1:DefaultInput>
+	    </remv1:StringParameter>
+    </remv1:EncryptedParameter>
+  </remv1:Action>
+  <remv1:Action Name="Scan Status" Command="C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe">
+    <remv1:ConstantParameter Name="Script" Switch="-file Shodan.ps1 " Order="1" />
+    <remv1:EncryptedParameter>
+        <remv1:StringParameter Name="Shodan API Key" Switch="-key " Order="2" >
+            <remv1:DefaultInput>
+			    <remv1:StaticInput Value="SHODAN API KEY" />
+		    </remv1:DefaultInput>
+	    </remv1:StringParameter>
+    </remv1:EncryptedParameter>
+	<remv1:StringParameter Name="Scan ID" Switch="-id " Order="3" >
+    	<remv1:DefaultInput>
+			<remv1:StaticInput Value="Shodan Scan ID" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>	
+ 	<remv1:ConstantParameter Name="Command" Switch="-command status" Order="4" />
+  	<remv1:StringParameter Name="Case #" Switch="-caseNumber " Order="5" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+	<remv1:StringParameter Name="LogRhythm Web Console" Switch="-LogRhythmHost " Order="6" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="LogRhythm Web Console URL/IP:8501" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+    <remv1:EncryptedParameter>
+		<remv1:StringParameter Name="Case API Token" Switch="-caseAPIToken " Order="7" >
+		    <remv1:DefaultInput>
+			    <remv1:StaticInput Value="LogRhythm Case API Key" />
+		    </remv1:DefaultInput>
+	    </remv1:StringParameter>
+    </remv1:EncryptedParameter>
+  </remv1:Action>
+  <remv1:Action Name="API Info" Command="C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe">
+    <remv1:ConstantParameter Name="Script" Switch="-file Shodan.ps1 " Order="1" />
+    <remv1:EncryptedParameter>
+        <remv1:StringParameter Name="Shodan API Key" Switch="-key " Order="2" >
+            <remv1:DefaultInput>
+			    <remv1:StaticInput Value="SHODAN API KEY" />
+		    </remv1:DefaultInput>
+	    </remv1:StringParameter>
+    </remv1:EncryptedParameter>	
+ 	<remv1:ConstantParameter Name="Command" Switch="-command api-info" Order="3" />
+  </remv1:Action>
+</remv1:Remediation-Plugin>
