@@ -1,6 +1,6 @@
 #====================================#
 #      Shodan SmartResponse          #
-#         Version 1.0                #
+#         Version 1.5                #
 #        Author: Jtekt               #
 #====================================#
 #
@@ -77,7 +77,7 @@ param(
 
 $shodanHostDetails = $true
 $shodanSSLDetails = $true
-$shodanMinecraftDetails = $true
+$shodanGameDetails = $true
 
 # Check if $host is IP or FQDN
 $hostIP = $targetHost -match $IPregex
@@ -140,35 +140,46 @@ for($i=0; $i -le ($shodanHostInfo.data.Length-1); $i++){
     if ( $($shodanHostInfo.data[$i].tags) ) { $status += "\r\nReported Tags: $($shodanHostInfo.data[$i].tags)" }
     if ( $($shodanHostInfo.data[$i].product) ) { $status += "\r\nDetected Product: $($shodanHostInfo.data[$i].product)" }
     if ( $($shodanHostInfo.data[$i].http.server) ) { $status += "\r\nHTTP Server: $($shodanHostInfo.data[$i].http.server)" }
+    if ( $($shodanHostInfo.data[$i].version) ) { $status += "\r\nVersion: $($shodanHostInfo.data[$i].version)" }
     $error = $($shodanHostInfo.data[$i].data) | Select-String -Pattern "ssl error"
     if ( $error ){
         $status += "\r\n$($shodanHostInfo.data[$i].data)"
     }
-    #Minecraft
-    if ( $shodanMinecraftDetails -eq $true) {
+    #Video game
+    if ( $shodanGameDetails -eq $true) {
+        #Minecraft
         if ( $shodanHostInfo.data[$i].product -eq "Minecraft" ) {
+            $status += "\r\n-Minecraft Server Info-\r\n"
             $status += "\r\nServer Version: $($shodanHostInfo.data[$i].minecraft.version.name)"
             $status += "\r\nServer Description: $($shodanHostInfo.data[$i].minecraft.description)"
             $status += "\r\nMax Players: $($shodanHostInfo.data[$i].minecraft.players.max)"
             $status += "\r\nCurrent Players: $($shodanHostInfo.data[$i].minecraft.players.online)"
         }
+        #Steam
+        if ( $($shodanHostInfo.data[$i]._shodan.module) -eq "steam-a2s" ) {
+            $status += "\r\n-Steam Server Info-\r\n"
+            $status += $shodanHostInfo.data | Select-Object -ExpandProperty data
+        }
     }
     #SSL
     if ( $shodanHostInfo.data[$i].ssl ){
-        $shodanCert1 = $shodanHostInfo.data[$i] | Select-Object -ExpandProperty ssl
+        $shodanCert = $shodanHostInfo.data[$i] | Select-Object -ExpandProperty ssl
         if ( $shodanSSLDetails -eq $true) {
             $status += "\r\n\r\n-- SSL Certificate Observed --"
-            $status += "\r\nCertificate Subject: $($shodanCert1.cert.subject)"
-            $status += "\r\nCertificate SHA256: $($shodanCert1.cert.fingerprint.sha256)"
-            $status += "\r\nCertificate Issuer: $($shodanCert1.cert.issuer)"
-            $status += "\r\nCertificate Issue date: $($shodanCert1.cert.issued)"
-            $status += "\r\nCertificate Expiration date: $($shodanCert1.cert.expires)"
-            $status += "\r\nSupported Ciphers: $($shodanCert1.cipher)\r\n"
+            $subject = $shodanCert.cert.subject -replace '[{}@]', ''
+            $status += "\r\nCertificate Subject: $subject"
+            $status += "\r\nCertificate SHA256: $($shodanCert.cert.fingerprint.sha256)"
+            $issuer = $shodanCert.cert.issuer -replace '[{}@]', ''
+            $status += "\r\nCertificate Issuer: $issuer"
+            $status += "\r\nCertificate Issue date: $($shodanCert.cert.issued)"
+            $status += "\r\nCertificate Expiration date: $($shodanCert.cert.expires)"
+            $ciphers = $shodanCert.cipher -replace '[{}@]', ''
+            $status += "\r\nSupported Ciphers: $ciphers\r\n"
         }
-        if ( $($shodanCert1.cert.expired) -eq $true ) {
+        if ( $($shodanCert.cert.expired) -eq $true ) {
             $status += "\r\nALERT: Expired Certificate Detected!"
         }
-        if ( $($shodanCert1.cert.issuer) -imatch "Let's Encrypt" ) {
+        if ( $($shodanCert.cert.issuer) -imatch "Let's Encrypt" ) {
             $status += "\r\nALERT: Let's Encrypt Certificate Authority Detected!"             
         } elseif ( $($shodanHostInfo.data[$i].tags) -imatch "self-signed" ) {
             $status += "\r\nALERT: Self Signed Certificate Detected!"
