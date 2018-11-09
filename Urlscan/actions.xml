@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<remv1:Remediation-Plugin xmlns:remv1="RemediationVersion1.xsd" Name="URL-Scan" Guid="00000000-0000-0000-0000-710000000001" Version="1" IsLogRhythmPlugin="false">
+  <remv1:Action Name="Wildfire File Status" Command="C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe">
+    <remv1:ConstantParameter Name="Script" Switch="-file urlscan.ps1 " Order="1" />
+    <remv1:StringParameter Name="URLScan API Key" Switch="-key " Order="2" >
+        <remv1:DefaultInput>
+			<remv1:StaticInput Value="URLScan API KEY" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+	<remv1:StringParameter Name="Link" Switch="-link " Order="3" >
+    	<remv1:DefaultInput>
+			<remv1:StaticInput Value="http://example.com" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>	
+  </remv1:Action>
+</remv1:Remediation-Plugin>
