@@ -1,12 +1,16 @@
 ﻿#
 # Author: JTekt
 # November 2018
-# Version 0.7
+# Version 0.8
 #
 # URLScan.io SmartResponse  
 #   
 #
 # .\URLScan.ps1 -key $urlscanAPI -link $splitLink
+#
+# Originally sourced from LogRhythm Community by: nielsvb
+#  https://community.logrhythm.com/t5/SmartResponse/SRP-URLScan-io/ta-p/121220
+#
 
 [CmdLetBinding()]
 param( 
@@ -17,13 +21,21 @@ param(
 
 # Mask errors
 $ErrorActionPreference= 'continue'
-$threatScore = 0
 $tmpFolder = Split-Path $MyInvocation.MyCommand.Path
 
 #Request and load scan request results
 $urlscanRequest = Invoke-WebRequest -Headers @{"API-Key" = "$key"} -Method Post ` -Body "{`"url`":`"$link`",`"public`":`"off`"}" -Uri https://urlscan.io/api/v1/scan/ ` -ContentType application/json
 $urlscanRequest.RawContent | Out-File $tmpFolder\urlscanRequest.txt
-$urlscanStatus = Get-Content $tmpFolder\urlscanRequest.txt | select -Skip 15 | ConvertFrom-Json
+
+#Find line skip
+$lines = Get-Content $tmpFolder\urlscanRequest.txt
+for ($i = 0; $i -le $lines.Length; $i++) {
+    if ($lines[$i].Length -eq 0) {
+        break
+    }
+}
+$skip = $i + 1
+$urlscanStatus = Get-Content $tmpFolder\urlscanRequest.txt | select -Skip $skip | ConvertFrom-Json
 
 #Determine when scan has completed
 DO
@@ -41,7 +53,7 @@ DO
 #Load scan results and populate variables
 #This could be built out to retrieve additional information from the scan results.
 $urlscanResultQuery.RawContent | Out-File $tmpFolder\urlscanAnalysis.txt
-$urlscanResults = Get-Content $tmpFolder\urlscanAnalysis.txt | select -Skip 15 | ConvertFrom-Json
+$urlscanResults = Get-Content $tmpFolder\urlscanAnalysis.txt | select -Skip $skip | ConvertFrom-Json
 
 #Cleanup temporary files
 Remove-Item -Path $tmpFolder\urlscanAnalysis.txt
@@ -66,15 +78,12 @@ if ( $serverStats -eq 0 ) {
 }
 if ($malware -gt 0 ) {
     $status += "\r\nALERT: Malware reported!"
-    $threatScore += 1
 }
 if ( $certIssuers -imatch "Let's Encrypt" ) {
-    $status += "\r\nALERT: Let's Encrypt Certificate Authority Detected!"
-    $threatScore += 1        
+    $status += "\r\nALERT: Let's Encrypt Certificate Authority Detected!"      
 }
 if ( $certIssuers -imatch $domains ) {
-    $status += "\r\nALERT: Self-Signed Certificate Detected!"
-    $threatScore += 1        
+    $status += "\r\nALERT: Self-Signed Certificate Detected!"      
 }
 
 #Present
