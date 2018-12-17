@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<remv1:Remediation-Plugin xmlns:remv1="RemediationVersion1.xsd" Name="O365 SnC" Guid="00000000-0000-0000-3000-100000000006" Version="1" IsLogRhythmPlugin="false">
+<remv1:Remediation-Plugin xmlns:remv1="RemediationVersion1.xsd" Name="O365 SnC" Guid="00000000-0000-0000-3000-100000000007" Version="1" IsLogRhythmPlugin="false">
   <remv1:Action Name="Search" Command="C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe">
     <remv1:ConstantParameter Name="Script" Switch="-file 365_SnCtroller.ps1 " Order="1" />
 	<remv1:StringParameter Name="Username" Switch="-username " Order="2" >

@@ -48,11 +48,19 @@ param(
     New-ComplianceSearchAction -SearchName "$uid" -Purge -PurgeType SoftDelete -Confirm:$false
     $purgeStatus = Get-ComplianceSearchAction -Identity "$uid`_Purge"
     DO {
-        sleep 10
+        sleep 4
         Write-Host "Job: $($purgeStatus.Name) Status: $($purgeStatus.Status)"
         $purgeStatus = Get-ComplianceSearchAction -Identity "$uid`_Purge"
-    } While ($purgeStatus.Status -ne "Completed" )
-    $status += "Purge Status\r\nName: $($purgeStatus.Name)\r\nAction: $($purgeStatus.Action)\r\nRunBy: $($purgeStatus.RunBy)\r\nStatus: $($purgeStatus.Status)\r\nEnd Time: $($purgeStatus.JobEndTime)"
+        if ( $purgeStatus -eq $null) {
+            $purgeStatus = "Failed"
+        }
+    } Until (($purgeStatus.Status -eq "Completed") -xor ($purgeStatus -eq "Failed") )
+    if ($purgeStatus.Status -eq "Completed") {
+        $status += "Purge Status\r\nName: $($purgeStatus.Name)\r\nAction: $($purgeStatus.Action)\r\nRunBy: $($purgeStatus.RunBy)\r\nStatus: $($purgeStatus.Status)\r\nEnd Time: $($purgeStatus.JobEndTime)"
+    }
+    if ($purgeStatus -eq "Failed") {
+        $status += "\r\nPurge Command failed."
+    }
     return "$status"
 }
 
@@ -110,6 +118,10 @@ param(
 
         New-ComplianceSearch -name "$uid" -Description "LogRhythm SR $uid" -ContentMatchQuery "(from:`"$funcSender`")" -ExchangeLocation "All" -force
 
+    } elseif ( $funcSubject  )  {
+
+        New-ComplianceSearch -name "$uid" -Description "LogRhythm SR $uid" -ContentMatchQuery "(subject=`"$funcSubject`")" -ExchangeLocation "All" -force
+
     } elseif ( $funcAttach ) {
 
         New-ComplianceSearch -name "$uid" -Description "LogRhythm SR $uid" -ContentMatchQuery "(attachmentnames:$funcAttach)" -ExchangeLocation "All" -force
@@ -128,14 +140,22 @@ param(
         sleep 15
         Write-Host "Job: $($p1.Name) Status: $($p1.Status)"
         $p1 = Get-ComplianceSearch -Identity "$uid"
-    } While ($p1.Status -ne "Completed" )
-    $status += "Compliance search complete.\r\nTo access results go to: https://protection.office.com/"
+        if ( $p1 -eq $null) {
+            $p1 = "Failed"
+        }
+    } Until ( ($p1.Status -eq "Completed" ) -xor ($p1 -eq "Failed") )
+    if ($($p1.Status) -eq "Completed") {
+        $status += "Purge Status\r\nName: $($p1.Name)"
+        $status += "Compliance search complete.\r\nTo access results go to: https://protection.office.com/"
+    }
+    if ($p1 -eq "Failed") {
+        $status += "\r\nSearch Command failed."
+    }
 }
 
 
 if ( $sender -OR $recipient -OR $subject -OR $attachmentName ) {
     #Search
-    Write-Host "Subject Type $($subject.gettype())"
     if ( $command -eq "Search" ) {
        Write-Host "ID: $id Sender: $sender Recipient: $recipient Subject: $subject Attachment: $attachmentName"
        $sdStatus = Search -uid $id -funcSender $sender -funcRecipient $recipient -funcSubject $subject -funcAttach $attachmentName
