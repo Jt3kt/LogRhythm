@@ -2,13 +2,58 @@
 #      365 Security and Compliance Controller             #
 #                   Version 1.5                           #
 #                  Author: Jtekt                          #
-#                 February 19 2019                        #
+#                 February 20 2019                        #
 #=========================================================#
 #
 # Licensed under the MIT License. See LICENSE file in the project root for full license information.
 #
 #   
-#
+<#
+    .SYNOPSIS
+        Script designed to extend the use and availability of Office 365 Security and Compliance capabilities.
+
+    .DESCRIPTION
+        Establishes authenticated connectivity to Office 365 PowerShell Compliance 365 center.  Supports the following
+        capabilities available through the module:
+            Search and Investigation -> Content Search
+            Content Purge based on Content Search results
+
+    .INPUTS
+        1) id, Unique identifier.  If used with LogRhythm and casemanagement, ID should be equal to the LogRhythm Case ID #.
+        
+        2) Provide any combination of the following as the basis criteria for any content search: sender e-mail address, recipient e-mail address, subject, attachment name. 
+        
+        3) Command.  Current supported commands are: search, purge, SnP (Search and Purge)
+
+        4) Username.  If being executed manually a prompt will be provided.
+
+        5) Password.  If being executed manually a prompt will be provided.
+         
+        Optional - Update LogRhythm Case
+        a) LogRhythm Case API key
+        
+        b) LogRhythm Web Console URL
+
+    .OUTPUTS
+        The job status for the respective command function called.  For results of content searches go to: https://protection.office.com
+
+    .EXAMPLE
+        .\365_SnCtroller.ps1 -id 1104 -sender "mobily.create@sendertargetexample.com" -recipient "ceo@example.com" -command "Search"
+        .\365_SnCtroller.ps1 -id 1104 -command "Purge"
+        .\365_SnCtroller.ps1 -id 1104 -sender "mobily.create@sendertargetexample.com" -recipient "cio@example.com" -attachment "invoice.docx" -command "SnP"
+        .\365_SnCtroller.ps1 -id 1104 -sender "mobily.create@sendertargetexample.com" -command "Search" -LogRhythmHost "logrhythmserver.example.com:8501" -caseAPIToken "ekdj39kjdlsd93lsdk3"
+
+    
+    .LINK
+        https://protection.office.com/
+        https://logrhythm.com/
+    
+    .NOTES
+        Security & Compliance Permissions required:
+          Search: Compliance Search
+          Purge: Search and Purge
+
+#>
 [CmdLetBinding()]
 param( 
     [Parameter(Mandatory=$true,Position=1)][string]$id,
@@ -47,7 +92,7 @@ function Purge{
 param( 
     [Parameter(Mandatory=$true,Position=1)][string]$uid 
 )
-    $status += "====365 Security n Compliance Controller====\r\nName: $uid\r\n"
+    $status += "====365 Security n Compliance Controller====\r\nCompliance Search Name: $uid\r\n"
     New-ComplianceSearchAction -SearchName "$uid" -Purge -PurgeType SoftDelete -Confirm:$false
     $purgeStatus = Get-ComplianceSearchAction -Identity "$uid`_Purge"
     DO {
@@ -59,7 +104,7 @@ param(
         }
     } Until (($purgeStatus.Status -eq "Completed") -xor ($purgeStatus -eq "Failed") )
     if ($purgeStatus.Status -eq "Completed") {
-        $status += "Type: Purge\r\nName: $($purgeStatus.Name)\r\nAction: $($purgeStatus.Action)\r\nRunBy: $($purgeStatus.RunBy)\r\nStatus: $($purgeStatus.Status)\r\nEnd Time: $($purgeStatus.JobEndTime)"
+        $status += "Type: Purge\r\nJob Name: $($purgeStatus.Name)\r\nAction: $($purgeStatus.Action)\r\nRunBy: $($purgeStatus.RunBy)\r\nStatus: $($purgeStatus.Status)\r\nEnd Time: $($purgeStatus.JobEndTime)"
     }
     if ($purgeStatus -eq "Failed") {
         $status += "\r\nPurge Command failed."
@@ -76,7 +121,7 @@ param(
     [Parameter(Mandatory=$false,Position=4)][string]$funcSubject,
     [Parameter(Mandatory=$false,Position=5)][string]$funcAttach
 )
-    $status = "====365 Security n Compliance Controller====\r\nName: $uid\r\n"
+    $status = "====365 Security n Compliance Controller====\r\nCompliance Search Name: $uid\r\n"
     if ( $funcSender -AND $funcRecipient -AND $funcSubject -AND $funcAttach ) {
 
         New-ComplianceSearch -name "$uid" -Description "LogRhythm SR $uid" -ContentMatchQuery "(from:$funcSender AND to:$funcRecipient AND subject=`"$funcSubject`" AND attachmentnames:$funcAttach)" -ExchangeLocation "All" -force
