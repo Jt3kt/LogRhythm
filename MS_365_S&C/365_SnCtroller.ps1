@@ -104,7 +104,7 @@ param(
         }
     } Until (($purgeStatus.Status -eq "Completed") -xor ($purgeStatus -eq "Failed") )
     if ($purgeStatus.Status -eq "Completed") {
-        $status += "Type: Purge\r\nJob Name: $($purgeStatus.Name)\r\nAction: $($purgeStatus.Action)\r\nRunBy: $($purgeStatus.RunBy)\r\nStatus: $($purgeStatus.Status)\r\nEnd Time: $($purgeStatus.JobEndTime)"
+        $status += "Job Name: $($purgeStatus.Name)\r\nAction: $($purgeStatus.Action)\r\nRunBy: $($purgeStatus.RunBy)\r\nStatus: $($purgeStatus.Status)\r\nEnd Time: $($purgeStatus.JobEndTime)"
     }
     if ($purgeStatus -eq "Failed") {
         $status += "\r\nPurge Command failed."
