@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<remv1:Remediation-Plugin xmlns:remv1="RemediationVersion1.xsd" Name="O365 SafeTracer" Guid="00000000-0000-0000-5000-100000000002" Version="1" IsLogRhythmPlugin="false">
+  <remv1:Action Name="Search" Command="C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe">
+    <remv1:ConstantParameter Name="Script" Switch="-file 365_SafeTracer.ps1 " Order="1" />
+	<remv1:StringParameter Name="Username" Switch="-username " Order="2" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="Username" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+    <remv1:EncryptedParameter>
+		<remv1:StringParameter Name="Password" Switch="-password " Order="3" >
+			<remv1:DefaultInput>
+				<remv1:StaticInput Value="" />
+			</remv1:DefaultInput>
+		</remv1:StringParameter>
+	</remv1:EncryptedParameter>
+   	<remv1:StringParameter Name="URL List" Switch="-urlList " Order="4" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="http://example.com, https://www.example2.com" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+	<remv1:StringParameter Name="Recipient List" Switch="-recipientList " Order="5" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="user1@example.com, user2@example.com" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+	<remv1:StringParameter Name="Start Date" Switch="-startDate " Order="6" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+	<remv1:StringParameter Name="End Date" Switch="-endDate " Order="7" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+	<remv1:StringParameter Name="Case #" Switch="-id " Order="8" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+	<remv1:StringParameter Name="LogRhythm Web Console" Switch="-LogRhythmHost " Order="9" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="logrhythmwebconsole.com:8501" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+    <remv1:EncryptedParameter>
+		<remv1:StringParameter Name="Case API Token" Switch="-caseAPIToken " Order="10" >
+		    <remv1:DefaultInput>
+			    <remv1:StaticInput Value="" />
+		    </remv1:DefaultInput>
+	    </remv1:StringParameter>
+    </remv1:EncryptedParameter>
+  </remv1:Action>
+</remv1:Remediation-Plugin>
