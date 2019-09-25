@@ -101,7 +101,7 @@ if(!$startDate) {
 if(!$endDate) {
     $endDate = (Get-Date).AddDays(-7)
 }
-$sltStatus = "== SmartResponse - 365 Safelink Trace ==`r`n"
+$sltStatus = "`r`n== SmartResponse - 365 Safelink Trace ==`r`n"
 if ($urls) {
     $sltStatus += "=- URL Report -=`r`nURL List:`r`n"
     $urls | ForEach-Object {
@@ -111,7 +111,7 @@ if ($urls) {
     $urls | ForEach-Object {
         Write-Verbose "Inspecting URL: $_ startDate: $endDate endDate $startDate"
         $sluResults = Get-UrlTrace -UrlOrDomain "$_" -StartDate $endDate -EndDate $startDate
-        $sltStatus += "Trace report for URL: `r`n$_`r`n"
+        $sltStatus += "`r`nTrace report for URL: `r`n$_`r`n"
 
         if ( $sluResults ) {
             $sluResults | ForEach-Object {
@@ -156,7 +156,7 @@ if ($recipients) {
         $slrResults = $null
     }
 }
-$sltStatus += "End Time: "+(Get-Date)
+$sltStatus += "SafeTrace Scope: $endDate - $startDate`r`nExecution Date: "+(Get-Date)
 return "$sltStatus"
 }
 

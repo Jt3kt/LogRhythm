@@ -40,6 +40,18 @@
 			<remv1:StaticInput Value="" />
 		</remv1:DefaultInput>
 	</remv1:StringParameter>
+	<remv1:EncryptedParameter>
+		<remv1:StringParameter Name="LR API Key" Switch="-caseAPIToken " Order="10" >
+			<remv1:DefaultInput>
+				<remv1:StaticInput Value="" />
+			</remv1:DefaultInput>
+		</remv1:StringParameter>
+	</remv1:EncryptedParameter>
+	<remv1:StringParameter Name="LogRhythm Web Console" Switch="-LogRhythmHost " Order="11" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="lrwebhost.example.com" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
   </remv1:Action>
   <remv1:Action Name="Search and Purge" Command="C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe">
     <remv1:ConstantParameter Name="Script" Switch="-file 365_SnCtroller.ps1 " Order="1" />
@@ -81,6 +93,18 @@
 			<remv1:StaticInput Value="" />
 		</remv1:DefaultInput>
 	</remv1:StringParameter>
+	<remv1:EncryptedParameter>
+		<remv1:StringParameter Name="LR API Key" Switch="-caseAPIToken " Order="10" >
+			<remv1:DefaultInput>
+				<remv1:StaticInput Value="" />
+			</remv1:DefaultInput>
+		</remv1:StringParameter>
+	</remv1:EncryptedParameter>
+	<remv1:StringParameter Name="LogRhythm Web Console" Switch="-LogRhythmHost " Order="11" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="lrwebhost.example.com" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
   </remv1:Action>
   <remv1:Action Name="Purge" Command="C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe">
     <remv1:ConstantParameter Name="Script" Switch="-file 365_SnCtroller.ps1 " Order="1" />
@@ -100,6 +124,18 @@
    	<remv1:StringParameter Name="ID" Switch="-id " Order="5" >
 		<remv1:DefaultInput>
 			<remv1:StaticInput Value="Unique Identifier" />
+		</remv1:DefaultInput>
+	</remv1:StringParameter>
+	<remv1:EncryptedParameter>
+		<remv1:StringParameter Name="LR API Key" Switch="-caseAPIToken " Order="6" >
+			<remv1:DefaultInput>
+				<remv1:StaticInput Value="" />
+			</remv1:DefaultInput>
+		</remv1:StringParameter>
+	</remv1:EncryptedParameter>
+	<remv1:StringParameter Name="LogRhythm Web Console" Switch="-LogRhythmHost " Order="7" >
+		<remv1:DefaultInput>
+			<remv1:StaticInput Value="lrwebhost.example.com" />
 		</remv1:DefaultInput>
 	</remv1:StringParameter>
   </remv1:Action>
